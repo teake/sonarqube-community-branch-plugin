@@ -62,14 +62,11 @@ public class CommunityBranchConfigurationLoader implements BranchConfigurationLo
         localSettings = autoConfigure(localSettings);
 
         if (projectBranches.isEmpty()) {
-            if (isTargetingDefaultBranch(localSettings)) {
-                return new DefaultBranchConfiguration();
-            } else {
-                // it would be nice to identify the 'primary' branch directly, but different projects work differently: using any of master, develop, main etc as primary
-                // A project/global configuration entry could be used to drive this in the future, but the current documented SonarQube parameters need followed for now
-                throw MessageException
-                        .of("No branches currently exist in this project. Please scan the main branch without passing any branch parameters.");
-            }
+            // Make sure we can work with empty projects.
+            // Simplified version of https://github.com/mc1arke/sonarqube-community-branch-plugin/issues/32#issue-491807564.
+            // Needed to be simplified because the link above was for pre 8.1, but we want it to work on 8.1
+            // If the default branch is not 'master', we rename it afterwards via the SonarQube API during GitLab CI.
+            return new DefaultBranchConfiguration();
         }
         if (BRANCH_ANALYSIS_PARAMETERS.stream().anyMatch(localSettings::containsKey)) {
             return createBranchConfiguration(localSettings.get(ScannerProperties.BRANCH_NAME),
