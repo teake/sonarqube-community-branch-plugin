@@ -169,6 +169,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                     .map(BigDecimal::new)
                     .map(decimalFormat::format)
                     .orElse(NO_COVERAGE_VALUE);
+            LOGGER.info(String.format("Found coverage value: %s ", coverageValue));
 
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
 

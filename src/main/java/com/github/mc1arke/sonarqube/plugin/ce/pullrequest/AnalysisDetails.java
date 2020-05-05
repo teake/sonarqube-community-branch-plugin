@@ -121,18 +121,21 @@ public class AnalysisDetails {
 
     public String createAnalysisSummary(FormatterFactory formatterFactory) {
 
-        BigDecimal newCoverage = findMeasure(CoreMetrics.NEW_COVERAGE_KEY)
-                .map(Measure::getDoubleValue)
-                .map(BigDecimal::new)
-                .orElse(null);
+        BigDecimal newCoverage =
+                findQualityGateCondition(CoreMetrics.NEW_COVERAGE_KEY)
+                        .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                        .map(QualityGate.Condition::getValue)
+                        .map(BigDecimal::new)
+                        .orElse(null);
 
         BigDecimal coverage = findMeasure(CoreMetrics.COVERAGE_KEY).
                 map(Measure::getDoubleValue).
                 map(BigDecimal::new)
                 .orElse(null);
 
-        BigDecimal newDuplications = findMeasure(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
-                .map(Measure::getDoubleValue)
+        BigDecimal newDuplications = findQualityGateCondition(CoreMetrics.NEW_DUPLICATED_LINES_DENSITY_KEY)
+                .filter(condition -> condition.getStatus() != EvaluationStatus.NO_VALUE)
+                .map(QualityGate.Condition::getValue)
                 .map(BigDecimal::new)
                 .orElse(null);
 
