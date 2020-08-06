@@ -175,37 +175,40 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             postCommitComment(mergeRequestDiscussionURL, headers, summaryContentParams);
 
-            for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
-                String path = analysis.getSCMPathForIssue(issue).orElse(null);
-                if (path != null && issue.getIssue().getLine() != null) {
-                    //only if we have a path and line number
-                    String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory());
+            // Quickfix: do not post comments on the code. This can quickly swamp the MR with noise.
+            // TODO: rebase / merge e129d90ec29e6b38630a39d7ebb0dd2606db8873 and disable it from the  command line.
+            if (false) {
+                for (PostAnalysisIssueVisitor.ComponentIssue issue : openIssues) {
+                    String path = analysis.getSCMPathForIssue(issue).orElse(null);
+                    if (path != null && issue.getIssue().getLine() != null) {
+                        //only if we have a path and line number
+                        String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory());
 
-                    if (scmInfoRepository.getScmInfo(issue.getComponent())
-                            .filter(i -> i.hasChangesetForLine(issue.getIssue().getLine()))
-                            .map(i -> i.getChangesetForLine(issue.getIssue().getLine()))
-                            .map(Changeset::getRevision)
-                            .filter(commits::contains)
-                            .isPresent()) {
-                        //only if the change is on a commit, that belongs to this MR
+                        if (scmInfoRepository.getScmInfo(issue.getComponent())
+                                .filter(i -> i.hasChangesetForLine(issue.getIssue().getLine()))
+                                .map(i -> i.getChangesetForLine(issue.getIssue().getLine()))
+                                .map(Changeset::getRevision)
+                                .filter(commits::contains)
+                                .isPresent()) {
+                            //only if the change is on a commit, that belongs to this MR
 
-                        List<NameValuePair> fileContentParams = Arrays.asList(
-                                new BasicNameValuePair("body", fileComment),
-                                new BasicNameValuePair("position[base_sha]", mergeRequest.getDiffRefs().getBaseSha()),
-                                new BasicNameValuePair("position[start_sha]", mergeRequest.getDiffRefs().getStartSha()),
-                                new BasicNameValuePair("position[head_sha]", mergeRequest.getDiffRefs().getHeadSha()),
-                                new BasicNameValuePair("position[old_path]", path),
-                                new BasicNameValuePair("position[new_path]", path),
-                                new BasicNameValuePair("position[new_line]", String.valueOf(issue.getIssue().getLine())),
-                                new BasicNameValuePair("position[position_type]", "text"));
+                            List<NameValuePair> fileContentParams = Arrays.asList(
+                                    new BasicNameValuePair("body", fileComment),
+                                    new BasicNameValuePair("position[base_sha]", mergeRequest.getDiffRefs().getBaseSha()),
+                                    new BasicNameValuePair("position[start_sha]", mergeRequest.getDiffRefs().getStartSha()),
+                                    new BasicNameValuePair("position[head_sha]", mergeRequest.getDiffRefs().getHeadSha()),
+                                    new BasicNameValuePair("position[old_path]", path),
+                                    new BasicNameValuePair("position[new_path]", path),
+                                    new BasicNameValuePair("position[new_line]", String.valueOf(issue.getIssue().getLine())),
+                                    new BasicNameValuePair("position[position_type]", "text"));
 
-                        postCommitComment(mergeRequestDiscussionURL, headers, fileContentParams);
-                    } else {
-                        LOGGER.info(String.format("Skipping %s:%d since the commit does not belong to the MR", path, issue.getIssue().getLine()));
+                            postCommitComment(mergeRequestDiscussionURL, headers, fileContentParams);
+                        } else {
+                            LOGGER.info(String.format("Skipping %s:%d since the commit does not belong to the MR", path, issue.getIssue().getLine()));
+                        }
                     }
                 }
             }
-
             return DecorationResult.builder().withPullRequestUrl(prHtmlUrl).build();
         } catch (IOException ex) {
             throw new IllegalStateException("Could not decorate Pull Request on Gitlab Server", ex);
