@@ -28,11 +28,14 @@ public class Note {
 
     private final User author;
 
+    private final String body;
+
     @JsonCreator
-    public Note(@JsonProperty("id") long id, @JsonProperty("system") boolean system, @JsonProperty("author") User author) {
+    public Note(@JsonProperty("id") long id, @JsonProperty("system") boolean system, @JsonProperty("author") User author, @JsonProperty("body") String body) {
         this.id = id;
         this.system = system;
         this.author = author;
+        this.body = body;
     }
 
     public long getId() {
@@ -45,5 +48,9 @@ public class Note {
 
     public User getAuthor() {
         return author;
+    }
+
+    public String getBody() {
+        return body;
     }
 }

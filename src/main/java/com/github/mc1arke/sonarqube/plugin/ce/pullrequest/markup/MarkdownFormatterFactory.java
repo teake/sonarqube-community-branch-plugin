@@ -20,7 +20,7 @@ package com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup;
 
 import java.util.stream.IntStream;
 
-public final class MarkdownFormatterFactory implements FormatterFactory {
+public class MarkdownFormatterFactory implements FormatterFactory {
 
     @Override
     public Formatter<Document> documentFormatter() {

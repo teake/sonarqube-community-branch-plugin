@@ -30,7 +30,7 @@ import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Discus
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.MergeRequest;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.Note;
 import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.gitlab.response.User;
-import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.MarkdownFormatterFactory;
+import com.github.mc1arke.sonarqube.plugin.ce.pullrequest.markup.AnnotatedMarkdownFormatterFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.Header;
@@ -154,7 +154,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             for (Discussion discussion : discussions) {
                 for (Note note : discussion.getNotes()) {
-                    if (!note.isSystem() && note.getAuthor() != null && note.getAuthor().getUsername().equals(user.getUsername())) {
+                    if (!note.isSystem() && note.getAuthor() != null && note.getAuthor().getUsername().equals(user.getUsername()) && note.getBody().contains(AnnotatedMarkdownFormatterFactory.SONARQUBE_COMMENT_MARKER)) {
                         //delete only our own comments
                         deleteCommitDiscussionNote(mergeRequestDiscussionURL + String.format("/%s/notes/%s",
                                 discussion.getId(),
@@ -166,7 +166,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
 
             List<PostAnalysisIssueVisitor.ComponentIssue> openIssues = analysis.getPostAnalysisIssueVisitor().getIssues().stream().filter(i -> OPEN_ISSUE_STATUSES.contains(i.getIssue().getStatus())).collect(Collectors.toList());
 
-            String summaryCommentBody = analysis.createAnalysisSummary(new MarkdownFormatterFactory());
+            String summaryCommentBody = analysis.createAnalysisSummary(new AnnotatedMarkdownFormatterFactory());
             List<NameValuePair> summaryContentParams = Collections
                     .singletonList(new BasicNameValuePair("body", summaryCommentBody));
 
@@ -187,7 +187,7 @@ public class GitlabServerPullRequestDecorator implements PullRequestBuildStatusD
                     String path = analysis.getSCMPathForIssue(issue).orElse(null);
                     if (path != null && issue.getIssue().getLine() != null) {
                         //only if we have a path and line number
-                        String fileComment = analysis.createAnalysisIssueSummary(issue, new MarkdownFormatterFactory());
+                        String fileComment = analysis.createAnalysisIssueSummary(issue, new AnnotatedMarkdownFormatterFactory());
 
                         if (scmInfoRepository.getScmInfo(issue.getComponent())
                                 .filter(i -> i.hasChangesetForLine(issue.getIssue().getLine()))
